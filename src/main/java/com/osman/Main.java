@@ -28,7 +28,15 @@ public class Main {
 
         JavaRDD<Double> inputDataRdd=sc.parallelize(inputData);
 
-        Double result= inputDataRdd.reduce((a, b) -> a + b);
+//        Double result= inputDataRdd.reduce((a, b) -> a + b);
+//        System.out.println(result);
+
+        JavaRDD<Double> sqrRootRdd= inputDataRdd.map(Math::sqrt);
+        sqrRootRdd.collect().forEach(System.out::println); //print stream is not serializable, will throw error
+
+        //counting elements using map and reduce
+        Integer count = inputDataRdd.map(val -> 1).reduce(Integer::sum);
+        System.out.println("Count: " + count);
 
 
     }
