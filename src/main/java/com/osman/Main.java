@@ -12,6 +12,10 @@ import java.util.Arrays;
 import java.util.List;
 
 public class Main {
+
+    public static SparkConf conf = new SparkConf().setAppName("startingSpark").setMaster("local[*]");
+    public static JavaSparkContext sc =new JavaSparkContext(conf);
+
     public static void main(String[] args) {
 
         List<Double> inputData = new ArrayList<>();
@@ -21,10 +25,6 @@ public class Main {
         inputData.add(432.34);
         inputData.add(12.0);
 
-        Logger.getLogger("org.apache").setLevel(Level.WARN);
-
-        SparkConf conf = new SparkConf().setAppName("startingSpark").setMaster("local[*]");
-        JavaSparkContext sc =new JavaSparkContext(conf);
 
         JavaRDD<Double> inputDataRdd=sc.parallelize(inputData);
 
@@ -38,6 +38,7 @@ public class Main {
         Integer count = inputDataRdd.map(val -> 1).reduce(Integer::sum);
         System.out.println("Count: " + count);
 
+        sc.close();
 
     }
 }
