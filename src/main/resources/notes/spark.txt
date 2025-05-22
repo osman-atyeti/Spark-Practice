@@ -1,0 +1,31 @@
+⚡ What is Apache Spark?
+Apache Spark is an open-source, distributed data processing engine
+that provides a faster, flexible, and more powerful alternative to Hadoop MapReduce.
+
+💡 Core Idea:
+Instead of writing intermediate results to disk (like Hadoop), Spark keeps data in memory when possible, making computations much faster.
+
+⚡ What is the difference between Hadoop and Spark?
+Hadoop is a distributed storage and processing framework, while Spark is a
+data processing engine that can run on top of Hadoop or independently.
+
+⚡ What is the difference between Spark and MapReduce?
+Spark is a data processing engine that can perform in-memory computations,
+while MapReduce is a disk-based processing model. Spark is generally faster and more flexible than MapReduce.
+
+
+⚙️ 1.1.4 How Spark Runs (Architecture Preview)
+We’ll explore internals in 1.2, but here’s a quick view:
+
+Spark Job Execution Flow:
+You write code → Spark builds a DAG (Directed Acyclic Graph) of stages
+The Driver Program manages the job
+Executors run the actual tasks on a cluster
+Cluster Managers (like YARN, Mesos, Kubernetes, or Standalone) allocate resources
+
+Real Analogy:
+Imagine a movie production:
+Director = Driver
+Actors = Executors
+Production Studio = Cluster Manager
+Movie Script = DAG

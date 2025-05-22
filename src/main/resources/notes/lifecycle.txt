@@ -1,0 +1,155 @@
+Every Spark program is treated as a Spark Application, which consists of:
+
+A Driver Program
+Multiple Executors
+A Cluster Manager coordinating everything
+
+
+Lifecycle of a Spark Application
+
+        Step                                                  Description
+1. Submit Spark application                              Via spark-submit or Java main() class
+2. Driver process starts                              Runs on your machine or cluster
+3. DAG creation                                          Spark creates a Directed Acyclic Graph of tasks
+4. Jobs are broken into stages                          Stages are divided based on shuffles (data movement)
+5. Tasks assigned to executors                          Based on data partitioning
+6. Executors process data                              Output stored in memory or disk
+7. Result returned to driver / saved to storage         Final Step
+
+
+🧩 DAG: Directed Acyclic Graph
+
+- A DAG is a directed graph with no cycles, meaning it has a clear start and end.
+- In Spark, a DAG represents the sequence of computations that need to be performed on data.
+- The DAG is built from the transformations you apply to your data, and it helps Spark optimize the execution plan.
+- When you perform an action (like count or collect), Spark submits the DAG to the cluster for execution.
+
+- It is a graph of execution stages, where each node is a transformation, and edges show dependencies
+- Spark doesn’t execute transformations immediately — it builds this DAG lazily
+    🧠 Lazy Evaluation:
+            - Spark waits until an action (e.g., collect(), save()) is triggered to execute transformations.
+
+
+🧪 Java Example: Lazy Execution
+
+JavaRDD<String> lines = sc.textFile("logs.txt");  // No action yet
+JavaRDD<String> errors = lines.filter(line -> line.contains("ERROR")); // Still lazy  // transformation
+long count = errors.count(); // Action – DAG triggers here!
+
+Spark builds the plan only when count() is called. Until then, nothing is executed.
+
+
+Transformation vs Action
+
+- Transformations are lazy operations that create a new RDD from an existing one.
+- Transformations are not executed until an action is called.
+- Examples of transformations: map, filter, flatMap, reduceByKey
+
+- Actions trigger the execution of transformations and return a result.
+- Actions are executed immediately and return a value to the driver program or write data to storage.
+- Examples of actions: count, collect, saveAsTextFile
+
+🧠 1.2.4 Stages and Tasks
+
+- Spark divides a job into stages, and stages into tasks
+- Each stage corresponds to a set of transformations that can be executed in parallel
+- Each stage runs in parallel on partitions of data
+- A new stage is created after a shuffle (data movement between partitions)
+
+- Stages are executed in order, but tasks within a stage can run in parallel
+- Each task is a unit of work that runs on a partition of data
+- Tasks are executed by executors
+
+
+📦 1.2.5 Caching & Persistence
+In Java Spark, you can cache intermediate RDDs to speed up repeated use:
+
+```java
+JavaRDD<String> lines = sc.textFile("logs.txt");
+JavaRDD<String> errors = lines.filter(line -> line.contains("ERROR"));
+errors.cache(); // Cache the RDD
+long count = errors.count(); // First action triggers caching
+long countAgain = errors.count(); // Second action uses cached data
+```
+---------------------------------------------------------------------------------
+.cache()                         | Stores in memory (default)                  |
+.persist(StorageLevel.DISK_ONLY)   | Custom storage levels like disk or memory   |
+=================================================================================
+
+- Caching stores RDDs in memory for faster access
+- Use cache() or persist() to store RDDs
+- Caching is useful for iterative algorithms or when the same RDD is used multiple times
+- By default, RDDs are cached in memory, but you can also store them on disk or use a combination of both
+
+
+🧮 Execution Model: Memory & Cluster
+
+Component              Role
+
+Driver                  Coordinates job and keeps metadata
+Executors              Actually process data in parallel
+Cluster Manager          Allocates resources (Standalone, YARN, Mesos, Kubernetes)
+
+
+🔧 Java Spark Code: check Word Count code
+
+
+package com.example;
+
+import org.apache.spark.SparkConf;
+import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.api.java.JavaPairRDD;
+import scala.Tuple2;
+
+import java.util.Arrays;
+
+public class WordCount {
+
+    public static void main(String[] args) {
+
+        // Set the Hadoop home directory to avoid warnings
+        System.setProperty("hadoop.home.dir", "\"C:\\hadoop\"");
+
+
+        // Step 1: Create Spark Configuration object
+        // setAppName: Name of the Spark application (seen on UI or logs)
+        // setMaster("local[*]"): Run locally using all cores. In cluster, you'd use "yarn" or "spark://..."
+        SparkConf conf = new SparkConf()
+                .setAppName("WordCount")
+                .setMaster("local[*]");
+
+        // Step 2: Initialize Spark Context (entry point for Spark functionality in Java)
+        JavaSparkContext sc = new JavaSparkContext(conf);
+
+        // Step 3: Load input data from a text file into an RDD (lazy operation, not executed yet)
+        // Each element of the RDD will be a line from the file
+        JavaRDD<String> lines = sc.textFile("src/main/resources/word_count.txt");
+
+//        System.out.println(lines);
+        // Step 4: Transform the lines into individual words using flatMap
+        // flatMap: for each line, split it into words and return a flattened stream
+        JavaRDD<String> words = lines.flatMap(
+                line -> Arrays.asList(line.split(" ")).iterator()
+        );
+
+        // Step 5: Convert each word into a pair (word, 1) using mapToPair
+        // This prepares the data for counting
+        JavaPairRDD<String, Integer> wordPairs = words.mapToPair(
+                word -> new Tuple2<>(word, 1)
+        );
+
+        // Step 6: Reduce by key (i.e., for each word, sum all the 1s)
+        // This aggregates word counts across the dataset
+        JavaPairRDD<String, Integer> counts = wordPairs.reduceByKey(
+                (count1, count2) -> count1 + count2
+        );
+
+        // Step 7: Save the result to a text file
+        // This is an action — triggers the actual job execution
+        counts.saveAsTextFile("output");
+
+        // Step 8: Stop the Spark context to release resources
+        sc.close();
+    }
+}
