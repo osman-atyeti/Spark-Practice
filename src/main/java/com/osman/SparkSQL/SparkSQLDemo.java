@@ -2,13 +2,19 @@ package com.osman.SparkSQL;
 
 import org.apache.spark.api.java.function.FilterFunction;
 import org.apache.spark.sql.*;
+import org.apache.spark.sql.types.StructType;
 import scala.collection.immutable.Seq;
+
+import java.util.ArrayList;
+import java.util.Arrays;
 
 import static org.apache.spark.sql.functions.col;
 
 public class SparkSQLDemo {
 
     public static void main(String[] args) {
+
+        System.setProperty("hadoop.home.dir", "C:\\hadoop");
 
         SparkSession spark = SparkSession.builder()
                 .appName("Spark SQL Demo")
@@ -50,6 +56,12 @@ public class SparkSQLDemo {
 
         Dataset<Row> filteredMathRecords2 = csv.filter(col("subject").equalTo("Math").and(col("year").equalTo("2007")));
         filteredMathRecords2.show();
+
+        csv.createOrReplaceTempView("students");
+//        Dataset<Row> sqlFiltered = spark.sql("SELECT score, year FROM students WHERE subject = 'French'");
+        Dataset<Row> sqlFiltered = spark.sql("SELECT max(score) FROM students WHERE subject = 'French'");
+        sqlFiltered.show();
+
 
         spark.close();
 
