@@ -30,7 +30,7 @@ public class Main {
 
 //        Double result= inputDataRdd.reduce((a, b) -> a + b);
 //        System.out.println(result);
-
+    
         JavaRDD<Double> sqrRootRdd= inputDataRdd.map(Math::sqrt);
         sqrRootRdd.collect().forEach(System.out::println); //print stream is not serializable, will throw error
 
